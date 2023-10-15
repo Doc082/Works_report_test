@@ -1,0 +1,158 @@
+import { useRef } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useSearchClientMutation, useShowClientMutation } from "../../Service/clientApi";
+import { useUpdateReportMutation } from "../../Service/reportApi";
+
+
+
+const EditReport = () => {
+    const [updateRep] = useUpdateReportMutation();
+    const [search, {data, isSuccess}] = useSearchClientMutation();
+    const [showClient,{data: clientName, isSuccess:clientLoaded}] = useShowClientMutation();
+    const descriptionEl = useRef('');
+    const dateEl = useRef('')
+    const hourEl = useRef('')
+    const peopleEl = useRef('');
+    const clientEl = useRef('');
+    const searchEl = useRef('');
+    const referEl = useRef('');
+    const navi = useNavigate();
+
+    let clientId = 0;
+    let client = '';
+    if(isSuccess && data && data.name){
+      client = data.name;
+    }
+    
+    const changeCliName = () => {
+      search({'name': clientEl.current.value});
+    }   
+
+    const searchClick = (e) => {
+      if(isSuccess && data && data.name){
+        clientEl.current.value = data.name;
+        clientId = data.id;
+      } 
+    }
+
+    let {id} = useParams();
+    let report_id = Number(id);
+    const http = useLocation();
+    const pars = new URLSearchParams(http.search);
+    let client_name;
+    let date;
+    let hour;
+    let people;
+    let description;
+    let refer;
+    if(pars){
+        client_name = pars.get('client_name' ?? '');
+        date = pars.get('date' ?? '');
+        hour = pars.get('hour' ?? '');
+        people = pars.get('people' ?? '');
+        description = pars.get('description' ?? '');
+        refer = pars.get('refer'?? '');
+    }
+
+    if(clientLoaded){
+      clientEl.current.value = clientName.data.name;
+
+    }
+
+    useEffect(()=>{
+        if(client_name){
+            showClient(client_name);
+            clientEl.current.value = '';
+            dateEl.current.value = date;
+            hourEl.current.value = hour;
+            peopleEl.current.value = people;
+            descriptionEl.current.value = description;
+            referEl.current.value = refer;
+        }
+        
+    },[client_name]);
+
+    const editReport = (e) =>{
+        e.preventDefault();
+        updateRep({
+          id: report_id,
+          client_id: client_name,
+          date: dateEl.current.value,
+          people: peopleEl.current.value,
+          hour: hourEl.current.value,
+          description: descriptionEl.current.value,
+          refer: referEl.current.value,
+        });
+        
+        dateEl.current.value='';
+        peopleEl.current.value='';
+        hourEl.current.value='';
+        descriptionEl.current.value = '';
+        referEl.current.value ='';
+
+        navi('/dashboard/reports');
+    }  
+  return (
+    <div>
+      <div className="container text-center">
+        <div className="row justify-content-md-center">
+          <div className="col-6 bg-primary bg-opacity-25 m-5 shadow-lg p-3 mb-5 rounded">
+          
+      <div className="form-group">
+      <label>Cliente</label>
+        <input
+          onChange={changeCliName}
+          ref={clientEl}
+          className="form-control shadow p-3 mb-1 rounded"
+          name="Client"
+          id="Client"
+        />
+        { client && 
+          <button onClick={searchClick} ref={searchEl} className="btn btn-light form-control shadow p-3 mb-3 rounded">{client}</button>
+        }
+        <label>Referimento</label>
+        <input
+          ref={referEl}
+          type="text"
+          className="form-control shadow p-3 mb-3 rounded"
+          name="Refer"
+          id="Refer"
+        />
+        <label>Data</label>
+        <input
+          ref={dateEl}
+          type="text"
+          className="form-control shadow p-3 mb-3 rounded"
+          name="Date"
+          id="Date"
+        />
+        <label>Ore</label>
+        <input
+          ref={hourEl}
+          type="number"
+          className="form-control shadow p-3 mb-3 rounded"
+          name="Hour"
+          id="Hour"
+        />
+        <label>Persone</label>
+        <input
+          ref={peopleEl}
+          type="number"
+          className="form-control shadow p-3 mb-3 rounded"
+          name="People"
+          id="People"
+        />
+        <label>Descrizione</label>
+        <textarea ref = {descriptionEl} className="form-control" name="Description" id="Description" rows="3"></textarea>
+        
+        <button onClick = {editReport} className="m-1 btn btn-success">Modifica Report</button>
+        </div>
+    </div>
+    </div>
+    </div>
+    </div>
+  );
+}
+
+export default EditReport
